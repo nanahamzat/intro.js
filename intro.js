@@ -1,4 +1,9 @@
 /**
+ * Intro.js v2.3.0 patched
+ * The patch allows for fixed position of hints in sticky areas of the platform.
+ */
+
+/**
  * Intro.js v2.3.0
  * https://github.com/usablica/intro.js
  *
@@ -1457,6 +1462,26 @@
     // get/calculate offset of target element
     var offset = _getOffset.call(this, element);
 
+    // handle fixed positioning
+    var $element = $(element);
+    var mustBeFixed = $element.hasClass('ods-table-list__row--sticky') ||
+      $element.hasClass('ods-back-section__header--sticky') ||
+      $element.hasClass('ods-back-section__header--sticky-no-border') ||
+      $element.parents('.ods-table-list__row--sticky, .ods-back-section__header--sticky, .ods-back-section__header--sticky-no-border').length > 0;
+    if (mustBeFixed && $element.hasClass('ods-back-section__header')) {
+      hint.style.position = 'fixed';
+      hint.classList.add('introjs-hint--fixed');
+      // compensate negative margin
+      offset.left = offset.left + 20;
+      offset.top = offset.top + 20;
+    } else if (mustBeFixed) {
+      hint.style.position = 'fixed';
+      hint.classList.add('introjs-hint--fixed');
+    } else {
+      hint.style.position = 'absolute';
+      hint.classList.remove('introjs-hint--fixed');
+    }
+
     // align the hint element
     switch (position) {
       default:
@@ -1484,7 +1509,16 @@
         hint.style.left = (offset.left + (offset.width / 2)) + 'px';
         hint.style.top = offset.top + 'px';
         break;
+      case 'middle-right':
+        hint.style.left = (offset.left + offset.width) + 'px';
+        hint.style.top = (offset.top + (offset.height / 2)) + 'px';
+        break;
+      case 'middle-left':
+        hint.style.left = offset.left + 'px';
+        hint.style.top = (offset.top + (offset.height / 2)) + 'px';
+        break;
     }
+
   };
 
   /**
