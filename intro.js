@@ -1,10 +1,10 @@
 /**
- * Intro.js v2.3.0 patched
+ * Intro.js v2.4.0 patched
  * The patch allows for fixed position of hints in sticky areas of the platform.
  */
 
 /**
- * Intro.js v2.3.0
+ * Intro.js v2.4.0
  * https://github.com/usablica/intro.js
  *
  * Copyright (C) 2016 Afshin Mehrabani (@afshinmeh)
@@ -23,7 +23,7 @@
   }
 } (this, function (exports) {
   //Default config/variables
-  var VERSION = '2.3.0';
+  var VERSION = '2.4.0';
 
   /**
    * IntroJs main class
@@ -374,21 +374,21 @@
    * @param {Object} targetElement
    */
   function _exitIntro(targetElement) {
-    //remove overlay layer from the page
-    var overlayLayer = targetElement.querySelector('.introjs-overlay');
+    //remove overlay layers from the page
+    var overlayLayers = targetElement.querySelectorAll('.introjs-overlay');
 
-    //return if intro already completed or skipped
-    if (overlayLayer == null) {
-      return;
+    if (overlayLayers && overlayLayers.length > 0) {
+      for (var i = overlayLayers.length - 1; i >= 0; i--) {
+        //for fade-out animation
+        var overlayLayer = overlayLayers[i];
+        overlayLayer.style.opacity = 0;
+        setTimeout(function () {
+          if (this.parentNode) {
+            this.parentNode.removeChild(this);
+          }
+        }.bind(overlayLayer), 500);
+      };
     }
-
-    //for fade-out animation
-    overlayLayer.style.opacity = 0;
-    setTimeout(function () {
-      if (overlayLayer.parentNode) {
-        overlayLayer.parentNode.removeChild(overlayLayer);
-      }
-    }, 500);
 
     //remove all helper layers
     var helperLayer = targetElement.querySelector('.introjs-helperLayer');
@@ -771,7 +771,6 @@
    * @param {Object} targetElement
    */
   function _showElement(targetElement) {
-
     if (typeof (this._introChangeCallback) !== 'undefined') {
       this._introChangeCallback.call(this, targetElement.element);
     }
@@ -848,9 +847,10 @@
         _placeTooltip.call(self, targetElement.element, oldtooltipContainer, oldArrowLayer, oldHelperNumberLayer);
 
         //change active bullet
-        oldReferenceLayer.querySelector('.introjs-bullets li > a.active').className = '';
-        oldReferenceLayer.querySelector('.introjs-bullets li > a[data-stepnumber="' + targetElement.step + '"]').className = 'active';
-
+        if (self._options.showBullets) {
+            oldReferenceLayer.querySelector('.introjs-bullets li > a.active').className = '';
+            oldReferenceLayer.querySelector('.introjs-bullets li > a[data-stepnumber="' + targetElement.step + '"]').className = 'active';
+        }
         oldReferenceLayer.querySelector('.introjs-progress .introjs-progressbar').setAttribute('style', 'width:' + _getProgress.call(self) + '%;');
 
         //show the tooltip
@@ -1256,7 +1256,7 @@
    */
   function _populateHints(targetElm) {
     var self = this;
-    this._introItems = []
+    this._introItems = [];
 
     if (this._options.hints) {
       for (var i = 0, l = this._options.hints.length; i < l; i++) {
@@ -1367,6 +1367,38 @@
       for (var i = 0; i < hints.length; i++) {
         _hideHint.call(this, hints[i].getAttribute('data-step'));
       }
+    }
+  };
+
+  /**
+   * Show all hints
+   *
+   * @api private
+   * @method _showHints
+   */
+  function _showHints() {
+    var hints = this._targetElement.querySelectorAll('.introjs-hint');
+
+    if (hints && hints.length > 0) {
+      for (var i = 0; i < hints.length; i++) {
+        _showHint.call(this, hints[i].getAttribute('data-step'));
+      }
+    } else {
+      _populateHints.call(this, this._targetElement);
+    }
+  };
+
+  /**
+   * Show a hint
+   *
+   * @api private
+   * @method _showHint
+   */
+  function _showHint(stepId) {
+    var hint = this._targetElement.querySelector('.introjs-hint[data-step="' + stepId + '"]');
+
+    if (hint) {
+      hint.className = hint.className.replace(/introjs\-hidehint/g, '');
     }
   };
 
@@ -1705,6 +1737,24 @@
       _goToStep.call(this, step);
       return this;
     },
+    addStep: function(options) {
+      if (!this._options.steps) {
+        this._options.steps = [];
+      }
+
+      this._options.steps.push(options);
+
+      return this;
+    },
+    addSteps: function(steps) {
+      if (!steps.length) return;
+
+      for(var index = 0; index < steps.length; index++) {
+        this.addStep(steps[index]);
+      }
+
+      return this;
+    },
     nextStep: function() {
       _nextStep.call(this);
       return this;
@@ -1800,6 +1850,14 @@
     },
     hideHints: function () {
       _hideHints.call(this);
+      return this;
+    },
+    showHint: function (stepId) {
+      _showHint.call(this, stepId);
+      return this;
+    },
+    showHints: function () {
+      _showHints.call(this);
       return this;
     }
   };
